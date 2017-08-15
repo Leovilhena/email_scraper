@@ -18,25 +18,28 @@ from requests_handler import urlBuilder, makeRequest
 #
 
 
-def bsObjCreator(url_text):
-    """Creates a BeautifulSoup Object for scraping"""
-
-    if not url_text:
-        return None
-
-    try:
-        bsObj = BeautifulSoup(url_text, "lxml")
-        return bsObj
-    except AttributeError as e:
-        print('Error: Lack of ingredients')
-
-    return None
-
-def getEmails(bsObj, baseurl):
+def getEmails(url_input):
     """Get all links from page and look for contact page and emails for contact"""
 
+    # Variables in scope
     global contact_pages
     global emails
+
+    # Builds url
+    my_url = urlBuilder(url_input)
+
+    # Makes a GET request
+    url_text = makeRequest(my_url)
+
+    # Sanity check
+    if not url_text:
+        return
+
+    # Creates a BeautifulSoup Object for scraping
+    try:
+        bsObj = BeautifulSoup(url_text, "lxml")
+    except AttributeError as e:
+        print('Error: Lack of ingredients')
 
     # Sanity check
     if not bsObj:
@@ -60,17 +63,15 @@ def getEmails(bsObj, baseurl):
             # Internal link
             if regex_internal_link.search(a):
                 # Fix url
-                # NEED A FIX FOR MISTAKEN INTERNAL LINK
-                url = urljoin(baseurl,a)
+                url = urljoin(my_url,a)
                 if url not in contact_pages:
                     contact_pages.add(url)
-                    getEmails(bsObjCreator(makeRequest(url)), baseurl)
+                    getEmails(url)
             # External link
             else:
                 if a not in contact_pages:
-                    url = urlBuilder(a)
-                    contact_pages.add(url)
-                    getEmails(bsObjCreator(makeRequest(url)), baseurl)
+                    contact_pages.add(a)
+                    getEmails(a)
     return
 
 
@@ -78,6 +79,8 @@ def getEmails(bsObj, baseurl):
 print('Type H for help')
 print('Type Q to exit')
 #print('Type O to open a file')
+
+# Variables declaration
 contact_pages = set()
 emails = set()
 
@@ -87,20 +90,18 @@ def main():
 
         # Getting url from input
         try:
-            url = input('\nWebsite url: ')
+            url_input = input('\nWebsite url: ')
         except:
             print('An error has occurred')
             exit(1)
 
         # Checking input for other options
-        if helper(url):
+        if helper(url_input):
             continue
         else:
-            # Building url
-            my_url = urlBuilder(url)
 
-            # Call of all functions - NEED A FIX
-            getEmails(bsObjCreator(makeRequest(my_url)),my_url)
+            # Call of our function to get emails
+            getEmails(url_input)
 
             # Print results
             printResults(emails)

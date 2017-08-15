@@ -10,8 +10,8 @@ from urllib.parse import urlsplit, urljoin
 def urlBuilder(url):
     """Builds our url, if not well written"""
 
-    if url.startswith('//',0,1):
-        url.replace('//','')
+    if url.startswith('//',0,2):
+        url = url.replace('//','')
 
     # Splits url for checking, useful to add more features later
     split_url = urlsplit(url)
