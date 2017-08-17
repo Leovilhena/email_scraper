@@ -3,6 +3,7 @@
 import re
 from bs4 import BeautifulSoup
 from urllib.parse import urlsplit, urljoin
+from difflib import SequenceMatcher
 from utils import openFile, logger, printResults, helper
 from requests_handler import urlBuilder, makeRequest
 
@@ -17,13 +18,17 @@ from requests_handler import urlBuilder, makeRequest
 # DONE IS BETTER THAN PERFECT!
 #
 
+def similar(url, link):
+    """Check for ratio similarities between two strings"""
+    # You can tweak this percentage if you're not getting so much emails or errors
+    # Sometimes domains can have different addresses
+    if SequenceMatcher(None, url, link).ratio() > 0.55:
+        return True
+    else:
+        return False
 
-def getEmails(url_input):
+def getEmails(url_input, contact_pages, emails):
     """Get all links from page and look for contact page and emails for contact"""
-
-    # Variables in scope
-    global contact_pages
-    global emails
 
     # Builds url
     my_url = urlBuilder(url_input)
@@ -64,15 +69,19 @@ def getEmails(url_input):
             if regex_internal_link.search(a):
                 # Fix url
                 url = urljoin(my_url,a)
-                if url not in contact_pages:
+                # Check if not contacted this page before and if we are in the same domain
+                if url not in contact_pages and similar(url,a):
                     contact_pages.add(url)
-                    getEmails(url)
+                    # Function recursion
+                    getEmails(url, contact_pages, emails)
             # External link
             else:
-                if a not in contact_pages:
+                # Check if not contacted this page before and if we are in the same domain
+                if a not in contact_pages and similar(my_url,a):
                     contact_pages.add(a)
-                    getEmails(a)
-    return
+                    # Function recursion
+                    getEmails(a, contact_pages, emails)
+    return emails
 
 
 # Welcome prints
@@ -80,9 +89,6 @@ print('Type H for help')
 print('Type Q to exit')
 #print('Type O to open a file')
 
-# Variables declaration
-contact_pages = set()
-emails = set()
 
 # Infinite loop for running
 def main():
@@ -99,9 +105,11 @@ def main():
         if helper(url_input):
             continue
         else:
+            contact_pages = set()
+            emails = set()
 
             # Call of our function to get emails
-            getEmails(url_input)
+            getEmails(url_input, contact_pages,emails)
 
             # Print results
             printResults(emails)
