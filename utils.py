@@ -1,6 +1,5 @@
-import datetime
-import json
 import os
+import csv
 
 def openFile(path):
     try:
@@ -12,20 +11,28 @@ def openFile(path):
         print('Error while opening the file!')
         return None
 
-def logger(results, loaded={}):
-    # Now time as key for dictionary
-    date = str(datetime.datetime.now())
+def exportCSV(emails):
+    if not emails:
+        return
 
-    # Check for file in disk
-    if os.path.isfile('emails_list.json'):
-        # Open file and load, if not a JSON create a dict for it
-        with open('emails_list.json', 'r') as log:
-            loaded = json.load(log)
+    try:
+        print('Please write file name (with no extension)')
+        output_file = input('If you write the same file name, new emails will be appended to the file: ')
 
-    # Open file and save as a JSON
-    with open('emails_list.json', 'w+') as log:
-        loaded[date] = results
-        json.dump(loaded, log, indent=2)
+        with open(output_file + '.csv', 'a+') as out_stream:
+            out_writer = csv.writer(out_stream)
+            for line in emails:
+                out_writer.writerow([line])
+
+        print('File sucessfully exported %s.csv' % output_file)
+        return
+
+    except:
+        print('An error has occured')
+        return None
+
+
+
 
 
 def printResults(emails):
@@ -49,17 +56,16 @@ def helper(u_input):
     # Check for program options
     if u_input == 'q':
         exit(0)
-    # UNDER_CONSTRUCTION
-    #elif u_input == 'o':
-    #    path = input('Type file name: ')
-    #    link_list = openFile(path)
-    #    if link_list:
-    #        for link in link_list:
-    #            print('\n' + link)
-                # under_construction
-    #            return False
-        #else:
-        #    return True
+
+    elif u_input == 'o':
+        path = input('Type file name: ')
+        link_list = openFile(path)
+        if link_list:
+            for link in link_list:
+                # UNDER_CONSTRUCTION
+                return False
+        else:
+            return True
     elif u_input == 'h':
         print('\nJust type a website address to get contacts (english)')
     #    print('Type O to open a file')

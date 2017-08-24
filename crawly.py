@@ -4,7 +4,7 @@ import re
 from bs4 import BeautifulSoup
 from urllib.parse import urlsplit, urljoin
 from difflib import SequenceMatcher
-from utils import openFile, logger, printResults, helper
+from utils import openFile, exportCSV, printResults, helper
 from requests_handler import urlBuilder, makeRequest
 
 # My second email crawler
@@ -14,6 +14,10 @@ from requests_handler import urlBuilder, makeRequest
 # - Identify language and improve for Portuguese and Polish
 # - Save info in a database
 # - Add Selenium Request for JS websites
+# - Go to external website and find contacts related to base website (based on emails domains outside base scoupe)
+# - Divide getEmails function into different functions
+# - Add log wrapper
+# - Add sequenceMatcher control through command line
 #
 # DONE IS BETTER THAN PERFECT!
 #
@@ -22,7 +26,7 @@ def similar(url, link):
     """Check for ratio similarities between two strings"""
     # You can tweak this percentage if you're not getting so much emails or errors
     # Sometimes domains can have different addresses
-    if SequenceMatcher(None, url, link).ratio() > 0.55:
+    if SequenceMatcher(None, url, link).ratio() > 0.6:
         return True
     else:
         return False
@@ -55,22 +59,29 @@ def getEmails(url_input, contact_pages, emails):
     regex_email = re.compile(r"[a-z0-9\.\-+_]+@[a-z0-9\.\-+_]+\.[a-z]+", re.I)
     regex_internal_link = re.compile(r"(^/[a-z0-9]+/).+")
 
+    # Get emails from paragraphs
+    for p in bsObj.findAll('p'):
+        emails.update(regex_email.findall(p.get_text()))
+
     # Iteration on BeautifulSoup object: Gets 'href' attrs from 'a' tags
     for a in bsObj.findAll('a',attrs={'href':[regex_contact_about, regex_email]}):
         # Get text from tag
         a = a.get('href')
 
         # if it's an email add to emails set
-        if regex_email.search(a):
-            emails.add(a.replace('mailto:',''))
+        email = regex_email.search(a, re.I)
+        if email:
+            emails.add(email[0])
+
         # if it's a link check if internal or external
         elif regex_contact_about.search(a):
             # Internal link
             if regex_internal_link.search(a):
-                # Fix url
+                # Url fix
                 url = urljoin(my_url,a)
                 # Check if not contacted this page before and if we are in the same domain
                 if url not in contact_pages and similar(url,a):
+                    # Add to do not crawl again list
                     contact_pages.add(url)
                     # Function recursion
                     getEmails(url, contact_pages, emails)
@@ -78,6 +89,7 @@ def getEmails(url_input, contact_pages, emails):
             else:
                 # Check if not contacted this page before and if we are in the same domain
                 if a not in contact_pages and similar(my_url,a):
+                    # Add to do not crawl again list
                     contact_pages.add(a)
                     # Function recursion
                     getEmails(a, contact_pages, emails)
@@ -87,7 +99,7 @@ def getEmails(url_input, contact_pages, emails):
 # Welcome prints
 print('Type H for help')
 print('Type Q to exit')
-#print('Type O to open a file')
+print('Type O to open a file')
 
 
 # Infinite loop for running
@@ -114,11 +126,11 @@ def main():
             # Print results
             printResults(emails)
 
-            # UNDER_CONSTRUCTION Compiling all results
-            #final_results ={'url':my_url,'title':title, 'topics':about, 'emails': emails,'meta':[meta['content'] for meta in metas]}
+            if emails:
+                export = input('\nDo you want to export these emails? (y/n): ')
+                if export.lower() == 'y' or export.lower() == 'yes':
+                    exportCSV(emails)
 
-            # UNDER_CONSTRUCTION Saving/logging activities
-            #logger(final_results)
 
 
 if __name__ == '__main__':
