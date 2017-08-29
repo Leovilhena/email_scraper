@@ -58,18 +58,6 @@ def helper(u_input):
         exit(0)
 
     elif u_input == 'o':
-        path = input('Type file name: ')
-        link_list = openFile(path)
-        if link_list:
-            for link in link_list:
-                # UNDER_CONSTRUCTION
-                return False
-        else:
-            return True
-    elif u_input == 'h':
-        print('\nJust type a website address to get contacts (english)')
-    #    print('Type O to open a file')
-        print('Press Q to quit')
         return True
 
     return False

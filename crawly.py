@@ -97,7 +97,6 @@ def getEmails(url_input, contact_pages, emails):
 
 
 # Welcome prints
-print('Type H for help')
 print('Type Q to exit')
 print('Type O to open a file')
 
@@ -105,6 +104,8 @@ print('Type O to open a file')
 # Infinite loop for running
 def main():
     while(True):
+        contact_pages = set()
+        emails = set()
 
         # Getting url from input
         try:
@@ -115,11 +116,16 @@ def main():
 
         # Checking input for other options
         if helper(url_input):
-            continue
-        else:
-            contact_pages = set()
-            emails = set()
+            path = input('Type file name: ')
+            link_list = openFile(path)
+            if link_list:
+                for link in link_list:
+                    getEmails(link, contact_pages,emails)
+                printResults(emails)
+            else:
+                continue
 
+        else:
             # Call of our function to get emails
             getEmails(url_input, contact_pages,emails)
 
